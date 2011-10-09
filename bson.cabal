@@ -23,10 +23,12 @@ Library
                    cryptohash,
                    binary,
                    data-binary-ieee754,
-                   compact-string-fix,
+                   text >= 0.11,
+--                   compact-string-fix,
                    mtl >= 2
 
-    Exposed-modules: Data.UString,
+    Exposed-modules: 
+-- Data.UString,
                      Data.Bson,
                      Data.Bson.Binary
 
@@ -49,8 +51,9 @@ test-suite test
                    , cryptohash
                    , bytestring
                    , time
+                   , text >= 0.11
                    , data-binary-ieee754
-                   , compact-string-fix
+--                   , compact-string-fix
                    , file-location
 
     cpp-options:   -DTEST

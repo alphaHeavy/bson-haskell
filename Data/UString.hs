@@ -3,6 +3,8 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving, DeriveDataTypeable #-}
 
+DO NOT IMPORT
+
 module Data.UString (
 	UString, u,
 	module Data.CompactString.UTF8,

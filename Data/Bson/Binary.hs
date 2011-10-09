@@ -17,7 +17,10 @@ import Data.Binary.Get
 import Data.Binary.IEEE754
 import Data.ByteString.Char8 (ByteString, pack, length, concat)
 import qualified Data.ByteString.Lazy.Char8 as L (ByteString, toChunks, length)
-import qualified Data.CompactString.UTF8 as U
+--import qualified Data.CompactString.UTF8 as U
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import Data.Time.Clock (UTCTime)
 import Data.Time.Clock.POSIX
 import Control.Applicative ((<$>), (<*>))
@@ -107,26 +110,58 @@ putInt64 = putWord64le . fromIntegral
 getInt64 :: Get Int64
 getInt64 = fromIntegral <$> getWord64le
 
+{-
 putCString :: UString -> Put
 putCString x = do
 	putByteString (U.toByteString x)
 	putWord8 0
+-}
 
+putCString :: Text -> Put
+putCString x = do
+  putByteString (T.encodeUtf8 x)
+  putWord8 0
+
+{-
 getCString :: Get UString
 getCString = U.fromByteString_ . concat . L.toChunks <$> getLazyByteStringNul
+-}
 
+getCString :: Get Text
+getCString = T.decodeUtf8 . concat . L.toChunks <$> getLazyByteStringNul
+
+{-
 putString :: UString -> Put
 putString x = let b = U.toByteString x in do
 	putInt32 $ toEnum (length b + 1)
 	putByteString b
 	putWord8 0
+-}
 
+putString :: Text -> Put
+putString x = 
+  let b = T.encodeUtf8 x
+  in do
+    putInt32 $ toEnum (length b + 1)
+    putByteString b
+    putWord8 0
+
+{-
 getString :: Get UString
 getString = do
 	len <- subtract 1 <$> getInt32
 	b <- getByteString (fromIntegral len)
 	getWord8
 	return (U.fromByteString_ b)
+-}
+
+getString :: Get Text
+getString = do
+  len <- subtract 1 <$> getInt32
+  b <- getByteString (fromIntegral len)
+  getWord8
+  return (T.decodeUtf8 b)
+
 
 putDocument :: Document -> Put
 putDocument es = let b = runPut (mapM_ putField es) in do
@@ -147,7 +182,7 @@ getDocument = do
 
 putArray :: [Value] -> Put
 putArray vs = putDocument (zipWith f [0..] vs)
-	where f i v = (U.pack $! show i) := v
+	where f i v = (T.pack $! show i) := v
 
 getArray :: Get [Value]
 getArray = map value <$> getDocument
@@ -207,12 +242,14 @@ getUTC :: Get UTCTime
 -- stored as milliseconds since Unix epoch
 getUTC = posixSecondsToUTCTime . (/ 1000) . fromIntegral <$> getInt64
 
-putClosure :: UString -> Document -> Put
+--putClosure :: UString -> Document -> Put
+putClosure :: Text -> Document -> Put
 putClosure x y = let b = runPut (putString x >> putDocument y) in do
 	putInt32 $ (toEnum . fromEnum) (L.length b + 4)  -- including this length field
 	putLazyByteString b
 
-getClosure :: Get (UString, Document)
+--getClosure :: Get (UString, Document)
+getClosure :: Get (Text, Document)
 getClosure = do
 	getInt32
 	x <- getString
